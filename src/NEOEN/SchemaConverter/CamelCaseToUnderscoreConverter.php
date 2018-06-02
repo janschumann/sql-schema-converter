@@ -44,7 +44,7 @@ class CamelCaseToUnderscoreConverter implements ConverterInterface
 
         $options = $column->toArray();
         unset($options['name']);
-        $table->changeColumn($column->getName(), $options);
+        $table->changeColumn($this->underscore($column->getName()), $options);
     }
 
     public function acceptForeignKey(Table $localTable, ForeignKeyConstraint $fkConstraint)
