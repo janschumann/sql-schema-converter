@@ -14,7 +14,7 @@ class ConverterChain implements \Iterator
     /**
      * @var array[ConverterInterface]
      */
-    private $converter;
+    private $converter = [];
     /**
      * @var integer
      */
@@ -30,7 +30,7 @@ class ConverterChain implements \Iterator
      */
     public function add(ConverterInterface $converter)
     {
-        $this->converter[] = $converter;
+        array_push($this->converter, $converter);
     }
 
     /**
@@ -76,11 +76,12 @@ class ConverterChain implements \Iterator
      */
     public function valid()
     {
-        return $this->pos < count($this->converter);
+        return $this->pos < count($this->converter) - 1;
     }
 
     public function rewind()
     {
         $this->pos = 0;
+        $this->current = $this->converter[$this->pos];
     }
 }

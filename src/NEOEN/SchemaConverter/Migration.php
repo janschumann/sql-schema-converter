@@ -60,7 +60,7 @@ class Migration
 
         $this->targetConnection = $target;
         $this->targetPlatform = $this->targetConnection->getSchemaManager()->getDatabasePlatform();
-        $this->targetSchema = new \Doctrine\DBAL\Schema\Schema();
+        $this->targetSchema = new Schema();
         $this->currentTargetSchema = $this->targetConnection->getSchemaManager()->createSchema();
 
         $createTargetSchema = new CreateTargetSchemaConverter();

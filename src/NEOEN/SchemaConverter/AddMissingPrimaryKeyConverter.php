@@ -72,10 +72,12 @@ class AddMissingPrimaryKeyConverter implements ConverterInterface
         $count = $schema->getTables();
         switch ($state) {
             case ConverterInterface::SCHEMA_STATE_EMPTY:
-                if (0 === $count) throw new \LogicException($message);
+                if (0 !== $count) throw new \LogicException($message);
                 break;
             case ConverterInterface::SCHEMA_STATE_NOT_EMPTY:
-                if (0 !== $count) throw new \LogicException($message);
+                if (0 === $count) throw new \LogicException($message);
+                break;
+            case ConverterInterface::SCHEMA_STATE_NOT_NULL:
                 break;
             default:
                 throw new \LogicException("Unknown schema state " . $state);

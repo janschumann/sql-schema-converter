@@ -14,7 +14,6 @@ use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\DBAL\Schema\SchemaException;
 use Doctrine\DBAL\Schema\Sequence;
 use Doctrine\DBAL\Schema\Table;
 
@@ -45,8 +44,7 @@ class CamelCaseToUnderscoreConverter implements ConverterInterface
 
         $options = $column->toArray();
         unset($options['name']);
-        $table->dropColumn($column->getName());
-        $table->addColumn($this->underscore($column->getName()), $options['type']->getName(), $options);
+        $table->changeColumn($column->getName(), $options);
     }
 
     public function acceptForeignKey(Table $localTable, ForeignKeyConstraint $fkConstraint)
@@ -106,14 +104,16 @@ class CamelCaseToUnderscoreConverter implements ConverterInterface
         $count = $schema->getTables();
         switch ($state) {
             case ConverterInterface::SCHEMA_STATE_EMPTY:
-                if (0 === $count) {
+                if (0 !== $count) {
                     throw new \LogicException($message);
                 }
                 break;
             case ConverterInterface::SCHEMA_STATE_NOT_EMPTY:
-                if (0 !== $count) {
+                if (0 === $count) {
                     throw new \LogicException($message);
                 }
+                break;
+            case ConverterInterface::SCHEMA_STATE_NOT_NULL:
                 break;
             default:
                 throw new \LogicException("Unknown schema state ".$state);

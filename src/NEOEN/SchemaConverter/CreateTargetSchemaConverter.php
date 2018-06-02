@@ -8,7 +8,6 @@ use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Sequence;
 use Doctrine\DBAL\Schema\Table;
-use Doctrine\DBAL\Schema\Visitor\Visitor as SchemaVisitor;
 
 /**
  * This converter only migrates the schema to the target platform
@@ -52,13 +51,15 @@ class CreateTargetSchemaConverter implements ConverterInterface
             throw new \LogicException($message);
         }
 
-        $count = $schema->getTables();
+        $count = count($schema->getTables());
         switch ($state) {
             case ConverterInterface::SCHEMA_STATE_EMPTY:
-                if (0 === $count) throw new \LogicException($message);
+                if (0 !== $count) throw new \LogicException($message);
                 break;
             case ConverterInterface::SCHEMA_STATE_NOT_EMPTY:
-                if (0 !== $count) throw new \LogicException($message);
+                if (0 === $count) throw new \LogicException($message);
+                break;
+            case ConverterInterface::SCHEMA_STATE_NOT_NULL:
                 break;
             default:
                 throw new \LogicException("Unknown schema state " . $state);
