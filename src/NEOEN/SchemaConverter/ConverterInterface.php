@@ -1,6 +1,6 @@
 <?php
 
-namespace SchemaConverter;
+namespace NEOEN\SchemaConverter;
 
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Visitor\Visitor as SchemaVisitor;

@@ -6,7 +6,7 @@
  * Time: 19:21
  */
 
-namespace SchemaConverter;
+namespace NEOEN\SchemaConverter;
 
 
 use Doctrine\Common\Util\Inflector;

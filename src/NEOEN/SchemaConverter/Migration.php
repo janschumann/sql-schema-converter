@@ -6,13 +6,11 @@ use Doctrine\DBAL\ConnectionException;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
-use SchemaConverter\ConverterChain;
-use SchemaConverter\CreateTargetSchemaConverter;
 
 /**
  * Create and migrate a database
  *
- * @package NEOEN\SchemaConverter
+ * @package NEOEN\NEOEN.SchemaConverter
  */
 class Migration
 {

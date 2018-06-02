@@ -1,6 +1,6 @@
 <?php
 
-namespace SchemaConverter;
+namespace NEOEN\SchemaConverter;
 
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
@@ -13,7 +13,7 @@ use Doctrine\DBAL\Schema\Visitor\Visitor as SchemaVisitor;
 /**
  * This converter only migrates the schema to the target platform
  *
- * @package SchemaConverter
+ * @package NEOEN.SchemaConverter
  */
 class CreateTargetSchemaConverter implements ConverterInterface
 {

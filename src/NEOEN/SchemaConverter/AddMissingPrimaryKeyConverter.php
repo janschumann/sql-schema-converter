@@ -6,7 +6,7 @@
  * Time: 21:08
  */
 
-namespace SchemaConverter;
+namespace NEOEN\SchemaConverter;
 
 
 use Doctrine\DBAL\Schema\Column;
