@@ -1,0 +1,13 @@
+{
+    "name": "neoen/sql-schema-converter",
+    "license": "MIT",
+    "type": "project",
+    "description": "Convert a database to another provider.",
+    "autoload": {
+        "psr-0": { "NEOEN": "src/" }
+    },
+    "require": {
+        "php": ">=7.1.0",
+        "doctrine/orm": ">=2.2.3,<2.4-dev"
+    }
+}
