@@ -6,13 +6,15 @@
  * Time: 21:10
  */
 
-namespace NEOEN\SchemaConverter;
+namespace SchumannIt\DBAL\Schema\Converter;
 
+use Doctrine\DBAL\Schema\Schema;
+use SchumannIt\DBAL\Schema\Converter;
 
 class ConverterChain implements \Iterator
 {
     /**
-     * @var array[ConverterInterface]
+     * @var Converter[]
      */
     private $converter = [];
     /**
@@ -20,29 +22,20 @@ class ConverterChain implements \Iterator
      */
     private $pos;
     /**
-     * @var ConverterInterface
+     * @var Converter
      */
     private $current;
 
-
     /**
-     * @param ConverterInterface
+     * @param Converter
      */
-    public function add(ConverterInterface $converter)
+    public function add(Converter $converter)
     {
         array_push($this->converter, $converter);
     }
 
     /**
-     * @return array[ConverterInterface]
-     */
-    public function getConverters()
-    {
-        return $this->converter;
-    }
-
-    /**
-     * @return ConverterInterface
+     * @return Converter
      */
     public function current()
     {
@@ -60,7 +53,12 @@ class ConverterChain implements \Iterator
     public function next()
     {
         $this->pos++;
-        $this->current = $this->converter[$this->pos];
+        if (array_key_exists($this->pos, $this->converter)) {
+            $this->current = $this->converter[$this->pos];
+        }
+        else {
+            $this->current = null;
+        }
     }
 
     /**
@@ -72,16 +70,19 @@ class ConverterChain implements \Iterator
     }
 
     /**
+     * Checks if next position is valid
+     *
      * @return bool
      */
     public function valid()
     {
-        return $this->pos < count($this->converter) - 1;
+        return !is_null($this->current);
     }
 
     public function rewind()
     {
-        $this->pos = 0;
-        $this->current = $this->converter[$this->pos];
+        $this->pos = -1;
+        $this->current = null;
+        $this->next();
     }
 }

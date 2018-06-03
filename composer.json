@@ -1,13 +1,19 @@
 {
-    "name": "neoen/sql-schema-converter",
+    "name": "schumann-it/sql-schema-converter",
     "license": "MIT",
-    "type": "project",
-    "description": "Convert a database to another provider.",
+    "type": "library",
+    "description": "Convert a db schema.",
     "autoload": {
-        "psr-0": { "NEOEN": "src/" }
+        "psr-4": { "SchumannIt\\DBAL\\Schema\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "SchumannIt\\Tests\\DBAL\\Schema\\": "tests/" }
     },
     "require": {
         "php": ">=7.1.0",
-        "doctrine/orm": ">=2.2.3,<2.4-dev"
+        "doctrine/dbal": "^2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6"
     }
 }
