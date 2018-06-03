@@ -33,11 +33,7 @@ class Migration
     /**
      * @var array
      */
-    private $changes = [];
-    /**
-     * @var boolean
-     */
-    private $compared = false;
+    private $changes;
     /**
      * @var ConverterChain
      */
@@ -66,8 +62,6 @@ class Migration
      */
     public function hasChanges()
     {
-        $this->compare();
-
         return 0 < count($this->changes);
     }
 
@@ -76,8 +70,6 @@ class Migration
      */
     public function getChangesSql()
     {
-        $this->compare();
-
         $sql = "";
         foreach ($this->changes as $line) {
             $sql .= $line . ";\n";
@@ -92,8 +84,6 @@ class Migration
      */
     public function applyChanges()
     {
-        $this->compare();
-
         $this->targetConnection->beginTransaction();
         foreach ($this->changes as $line) {
             $this->targetConnection->exec($line);
@@ -104,14 +94,9 @@ class Migration
 
     private function compare()
     {
-        if ($this->compared == true) {
-            return;
-        }
         $comparator = new Comparator();
         $diff = $comparator->compare($this->targetConnection->getSchemaManager()->createSchema(), $this->targetSchema);
         $this->changes = $diff->toSql($this->targetPlatform);
-
-        $this->compared = true;
     }
 
     private function convert()

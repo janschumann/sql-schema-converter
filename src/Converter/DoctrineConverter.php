@@ -33,6 +33,30 @@ class DoctrineConverter extends CopyConverter
         $this->currentTable->addColumn($this->underscore($column->getName()), $options['type']->getName(), $options);
     }
 
+    public function acceptIndex(Table $table, Index $index)
+    {
+        $columns = $index->getColumns();
+        foreach ($columns as $i => $column) {
+            $columns[$i] = $this->underscore($columns[$i]);
+        }
+
+        switch (true)
+        {
+            case $index->isPrimary():
+                $this->currentTable->setPrimaryKey($columns);
+                break;
+
+            case $index->isUnique():
+                $this->currentTable->addUniqueIndex($columns);
+                break;
+
+            default:
+                $this->currentTable->addIndex($columns);
+                break;
+        }
+    }
+
+
     /**
      * Convert field and table names to underscore.
      * Makes sure that all input values have proper CamelCase

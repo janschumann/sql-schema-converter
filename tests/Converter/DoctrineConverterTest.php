@@ -58,4 +58,25 @@ class DoctrineConverterTest extends TestCase
         $this->assertArrayHasKey('foo_id', $columns);
         $this->assertArrayHasKey('already_underscored', $columns);
     }
+
+    public function testIndexColumnNamesAreChanged()
+    {
+        $table = new Table('foo', [
+            new Column('fooID', Type::getType('integer')),
+        ]);
+        $table->setPrimaryKey(['fooID']);
+        $sourceSchema = new Schema([$table]);
+
+        $converter = new DoctrineConverter();
+
+        $sourceSchema->visit($converter);
+
+        $table = $converter->getResult()->getTable('foo');
+
+        $columns = $table->getColumns();
+        $this->assertArrayHasKey('foo_id', $columns);
+
+        $columns = $table->getPrimaryKey()->getColumns();
+        $this->assertArrayHasKey('foo_id', array_flip($columns));
+    }
 }

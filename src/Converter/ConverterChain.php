@@ -82,7 +82,6 @@ class ConverterChain implements \Iterator
     public function rewind()
     {
         $this->pos = -1;
-        $this->current = null;
         $this->next();
     }
 }
