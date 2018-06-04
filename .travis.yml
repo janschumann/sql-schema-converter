@@ -19,7 +19,7 @@ jdk:
   - oraclejdk8
 
 script:
-  - vendor/bin/phpunit --coverage-xml build/phpunit.coverage.xml --log-junit build/phpunit.xml
+  - vendor/bin/phpunit --coverage-clover build/phpunit.coverage.xml --log-junit build/phpunit.xml
   - sonar-scanner
 
 cache:
