@@ -109,41 +109,40 @@ class Migration
             throw new \LogicException("Please apply changes before migrating data.");
         }
 
-        $targetSchema = $this->targetConnection->getSchemaManager()->createSchema();
+        // create the target schema from db
+        $this->targetSchema = $this->targetConnection->getSchemaManager()->createSchema();
+
         foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
             if (count($tables) > 0 && !array_key_exists($table->getName(), array_flip($tables))) {
                 continue;
             }
-            $this->processTable($targetSchema, $table);
+            $this->processTable($table);
         }
     }
 
     /**
-     * @param Schema $targetSchema
      * @param Table $table
      * @throws DBALException
      */
-    private function processTable(Schema $targetSchema, Table $table)
+    private function processTable(Table $table)
     {
-        $targetSchema = $this->targetConnection->getSchemaManager()->createSchema();
         $tableName = $table->getName();
         $stmt = $this->sourceConnection->query("SELECT * FROM ${tableName}");
         $rows = $stmt->fetchAll();
 
-        $this->processRows($targetSchema, $tableName, $rows);
+        $this->processRows($tableName, $rows);
     }
 
     /**
-     * @param Schema $targetSchema
      * @param string $tableName
      * @param array $rows
      * @throws DBALException
      * @throws \Doctrine\DBAL\Schema\SchemaException
      */
-    private function processRows(Schema $targetSchema, string $tableName, array $rows)
+    private function processRows(string $tableName, array $rows)
     {
         $newTableName = $this->mapping->getTableName($tableName);
-        $newTable = $targetSchema->getTable($newTableName);
+        $newTable = $this->targetSchema->getTable($newTableName);
         foreach ($rows as $row) {
             $binds = [];
             $data = [];
@@ -178,20 +177,5 @@ class Migration
         $comparator = new Comparator();
         $diff = $comparator->compare($this->targetConnection->getSchemaManager()->createSchema(), $this->targetSchema);
         $this->changes = $diff->toSql($this->targetPlatform);
-    }
-
-    public function getMigratedRows()
-    {
-        foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
-            $old = $table->getName();
-            $stmt = $this->sourceConnection->query("SELECT count(*) FROM ${old}");
-            $data = $stmt->fetchAll();
-            echo $old . ': ' . $data[0]['count(*)'] . ' :: ';
-
-            $new = $this->mapping->getTableName($old);
-            $stmt = $this->targetConnection->query("SELECT count(*) FROM ${new}");
-            $data = $stmt->fetchAll();
-            echo $new . ': ' . $data[0]['count(*)'] . "\n";
-        }
     }
 }

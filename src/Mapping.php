@@ -7,6 +7,7 @@ namespace SchumannIt\DBAL\Schema;
  */
 class Mapping
 {
+    const ERR_MESSAGE = " does not exist in resolved mappings.";
     /**
      * @var string[][]
      */
@@ -118,7 +119,7 @@ class Mapping
     public function getTableName(string $oldName)
     {
         if (!array_key_exists($oldName, $this->resolvedTableMapping)) {
-            throw new \LogicException("Table '" . $oldName . "' does not exist in resolved mappings.");
+            throw new \LogicException("Table '" . $oldName . "'" . self::ERR_MESSAGE);
         }
         return $this->resolvedTableMapping[$oldName];
     }
@@ -133,10 +134,10 @@ class Mapping
     public function getColumnName(string $oldTableName, string $oldName)
     {
         if (!array_key_exists($oldTableName, $this->resolvedTableMapping) || !array_key_exists($oldTableName, $this->resolvedColumnMapping)) {
-            throw new \LogicException("Table '" . $oldName . "' does not exist in resolved mappings.");
+            throw new \LogicException("Table '" . $oldName . "'" . self::ERR_MESSAGE);
         }
         if (!array_key_exists($oldName, $this->resolvedColumnMapping[$oldTableName])) {
-            throw new \LogicException("Column '" . $oldName . "' does not exist in resolved mappings.");
+            throw new \LogicException("Column '" . $oldName . "'" . self::ERR_MESSAGE);
         }
         return $this->resolvedColumnMapping[$oldTableName][$oldName];
     }
