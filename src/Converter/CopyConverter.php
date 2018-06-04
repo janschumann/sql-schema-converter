@@ -78,7 +78,6 @@ class CopyConverter implements Converter
     {
         $this->currentTable = $this->targetSchema->createTable($table->getName());
         $this->setTableMapping($table->getName(), $table->getName());
-
     }
 
     public function acceptColumn(Table $table, Column $column)

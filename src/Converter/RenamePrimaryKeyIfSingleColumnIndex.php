@@ -33,5 +33,8 @@ class RenamePrimaryKeyIfSingleColumnIndex extends CopyConverter
 
             $this->setColumnMapping($oldTableName, $oldColumnName, $newColumnName);
         }
+        else {
+            parent::acceptIndex($table, $index);
+        }
     }
 }

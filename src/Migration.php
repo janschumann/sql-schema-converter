@@ -102,7 +102,7 @@ class Migration
      * @throws DBALException
      * @throws \Doctrine\DBAL\Schema\SchemaException
      */
-    public function migrateData()
+    public function migrateData(array $tables = [])
     {
         if ($this->hasChanges()) {
             throw new \LogicException("Please apply changes before migrating data.");
@@ -110,20 +110,25 @@ class Migration
 
         $targetSchema = $this->targetConnection->getSchemaManager()->createSchema();
         foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
+            if (count($tables) > 0 && !array_key_exists($table->getName(), array_flip($tables))) {
+                continue;
+            }
+
             $tableName = $table->getName();
             $newTableName = $this->mapping->getTableName($tableName);
             $newTable = $targetSchema->getTable($newTableName);
 
             $stmt = $this->sourceConnection->query("SELECT * FROM ${tableName}");
-            while ($row = $stmt->fetch()) {
+            $rows = $stmt->fetchAll();
+            foreach ($rows as $row) {
                 $binds = [];
                 $data = [];
                 foreach ($row as $col => $value) {
                     $colName = $this->mapping->getColumnName($tableName, $col);
-                    $binds[] = ':' . $colName;
+                    $binds[] = ':'.$colName;
                     $data[$colName] = $value;
                 }
-                $insert = 'INSERT INTO ' . $newTableName . ' (' . implode(',', array_keys($data)) . ') VALUES (' . implode(',', $binds) . ')';
+                $insert = 'INSERT INTO ' . $newTableName .' (' . implode(',', array_keys($data)) . ') VALUES (' . implode(',', $binds) . ')';
                 $insertStmt = $this->targetConnection->prepare($insert);
                 foreach ($data as $col => $value) {
                     $insertStmt->bindValue($col, $value, $newTable->getColumn($col)->getType()->getBindingType());
@@ -150,5 +155,42 @@ class Migration
         $comparator = new Comparator();
         $diff = $comparator->compare($this->targetConnection->getSchemaManager()->createSchema(), $this->targetSchema);
         $this->changes = $diff->toSql($this->targetPlatform);
+    }
+
+    public function generateMigDataCommands()
+    {
+        $count = 0;
+        $commandCount = 1;
+        $tables = [];
+        $commands = [];
+        foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
+            if ($count == 2) {
+                $commands[] = 'if ($argv[1] == ' . $commandCount . ') $mig->migrateData(["' . implode('","', $tables) . '"])';
+                $commandCount++;
+                $count = 0;
+                $tables = [];
+            }
+            $count++;
+            $tables[] = $table->getName();
+        }
+        $commands[] = 'if ($argv[1] == ' . $commandCount . ') $mig->migrateData(["' . implode('","', $tables) . '"])';
+        foreach ($commands as $command) {
+            echo $command . ";\n";
+        }
+    }
+
+    public function getMigratedRows()
+    {
+        foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
+            $old = $table->getName();
+            $stmt = $this->sourceConnection->query("SELECT count(*) FROM ${old}");
+            $data = $stmt->fetchAll();
+            echo $old . ': ' . $data[0]['count(*)'] . ' :: ';
+
+            $new = $this->mapping->getTableName($old);
+            $stmt = $this->targetConnection->query("SELECT count(*) FROM ${new}");
+            $data = $stmt->fetchAll();
+            echo $new . ': ' . $data[0]['count(*)'] . "\n";
+        }
     }
 }
