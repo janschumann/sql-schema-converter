@@ -23,14 +23,24 @@ class DoctrineConverter extends CopyConverter
 {
     public function acceptTable(Table $table)
     {
-        $this->currentTable = $this->targetSchema->createTable($this->underscore($table->getName()));
+        $oldTableName = $table->getName();
+        $newTableName = $this->underscore($oldTableName);
+        $this->currentTable = $this->targetSchema->createTable($newTableName);
+
+        $this->setTableMapping($oldTableName, $newTableName);
     }
 
     public function acceptColumn(Table $table, Column $column)
     {
+        $oldTableName = $table->getName();
+        $oldColumnName = $column->getName();
+        $newColumnName = $this->underscore($oldColumnName);
+
         $options = $column->toArray();
         unset($options['name']);
-        $this->currentTable->addColumn($this->underscore($column->getName()), $options['type']->getName(), $options);
+        $this->currentTable->addColumn($newColumnName, $options['type']->getName(), $options);
+
+        $this->setColumnMapping($oldTableName, $oldColumnName, $newColumnName);
     }
 
     public function acceptIndex(Table $table, Index $index)

@@ -35,9 +35,9 @@ class Migration
      */
     private $changes;
     /**
-     * @var ConverterChain
+     * @var Mapping
      */
-    private $converterChain;
+    private $mapping;
 
     /**
      * @param Connection $source
@@ -46,18 +46,18 @@ class Migration
      */
     public function __construct(Connection $source, Connection $target, ConverterChain $converterChain)
     {
-        $this->converterChain = $converterChain;
-
         $this->sourceConnection = $source;
 
         $this->targetConnection = $target;
         $this->targetPlatform = $this->targetConnection->getSchemaManager()->getDatabasePlatform();
 
-        $this->convert();
+        $this->convert($converterChain);
         $this->compare();
     }
 
     /**
+     * Returns true if the target schema needs update
+     *
      * @return bool
      */
     public function hasChanges()
@@ -66,6 +66,8 @@ class Migration
     }
 
     /**
+     * Fetches the sql commands needed to sync target schema
+     *
      * @return string
      */
     public function getChangesSql()
@@ -79,6 +81,8 @@ class Migration
     }
 
     /**
+     * Apply schema changes to the target db
+     *
      * @throws ConnectionException
      * @throws DBALException
      */
@@ -92,21 +96,59 @@ class Migration
 
     }
 
+    /**
+     * Migrate data to the target db, assuming the target db is empty
+     *
+     * @throws DBALException
+     * @throws \Doctrine\DBAL\Schema\SchemaException
+     */
+    public function migrateData()
+    {
+        if ($this->hasChanges()) {
+            throw new \LogicException("Please apply changes before migrating data.");
+        }
+
+        $targetSchema = $this->targetConnection->getSchemaManager()->createSchema();
+        foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
+            $tableName = $table->getName();
+            $newTableName = $this->mapping->getTableName($tableName);
+            $newTable = $targetSchema->getTable($newTableName);
+
+            $stmt = $this->sourceConnection->query("SELECT * FROM ${tableName}");
+            while ($row = $stmt->fetch()) {
+                $binds = [];
+                $data = [];
+                foreach ($row as $col => $value) {
+                    $colName = $this->mapping->getColumnName($tableName, $col);
+                    $binds[] = ':' . $colName;
+                    $data[$colName] = $value;
+                }
+                $insert = 'INSERT INTO ' . $newTableName . ' (' . implode(',', array_keys($data)) . ') VALUES (' . implode(',', $binds) . ')';
+                $insertStmt = $this->targetConnection->prepare($insert);
+                foreach ($data as $col => $value) {
+                    $insertStmt->bindValue($col, $value, $newTable->getColumn($col)->getType()->getBindingType());
+                }
+                $insertStmt->execute();
+            }
+        }
+    }
+
+    private function convert(ConverterChain $converterChain)
+    {
+        $schema = $this->sourceConnection->getSchemaManager()->createSchema();
+        foreach ($converterChain as $converter) {
+            $schema->visit($converter);
+            $schema = $converter->getResult();
+        }
+
+        $this->mapping = $converterChain->getMapping();
+        $this->targetSchema = $schema;
+    }
+
     private function compare()
     {
         $comparator = new Comparator();
         $diff = $comparator->compare($this->targetConnection->getSchemaManager()->createSchema(), $this->targetSchema);
         $this->changes = $diff->toSql($this->targetPlatform);
-    }
-
-    private function convert()
-    {
-        $schema = $this->sourceConnection->getSchemaManager()->createSchema();
-        foreach ($this->converterChain as $converter) {
-            $schema->visit($converter);
-            $schema = $converter->getResult();
-        }
-
-        $this->targetSchema = $schema;
     }
 }

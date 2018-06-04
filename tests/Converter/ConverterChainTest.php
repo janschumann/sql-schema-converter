@@ -17,13 +17,15 @@ use PHPUnit\Framework\TestCase;
 use SchumannIt\DBAL\Schema\Converter\CopyConverter;
 use SchumannIt\DBAL\Schema\Converter\DoctrineConverter;
 use SchumannIt\DBAL\Schema\Converter\EnsureAutoIncrementPrimaryKeyConverter;
+use SchumannIt\DBAL\Schema\Converter\RenamePrimaryKeyIfSingleColumnIndex;
+use SchumannIt\DBAL\Schema\Mapping;
 
 class ConverterChainTest extends TestCase
 {
 
     public function test()
     {
-        $chain = new ConverterChain();
+        $chain = new ConverterChain($this->createMock(Mapping::class));
         $chain->add(new CopyConverter());
         $chain->add(new DoctrineConverter());
         $chain->add(new EnsureAutoIncrementPrimaryKeyConverter());

@@ -11,12 +11,10 @@ use Doctrine\DBAL\Schema\Sequence;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use SchumannIt\DBAL\Schema\Converter;
+use SchumannIt\DBAL\Schema\Mapping;
 
 /**
- * A .
- *
- * E.g. The Table representation normalizes column names in Table::dropColumn in a way that CamelCase coumns can
- * never be removed from a schema. This class fixes that by converting CamelCase to under_score names.
+ * Copys a schema by visiting schema, tables, columns and indices
  */
 class CopyConverter implements Converter
 {
@@ -32,6 +30,10 @@ class CopyConverter implements Converter
      * @var Table
      */
     protected $currentTable;
+    /**
+     * @var Mapping
+     */
+    protected $mapping;
 
     public function __construct()
     {
@@ -47,6 +49,26 @@ class CopyConverter implements Converter
         return $this->targetSchema;
     }
 
+    public function setSchemaMapping(Mapping $mapping)
+    {
+        $this->mapping = $mapping;
+        $this->mapping->addConverter($this);
+    }
+
+    public function setTableMapping(string $oldName, string $newName)
+    {
+        if (!is_null($this->mapping)) {
+            $this->mapping->setTableMapping($oldName, $newName);
+        }
+    }
+
+    public function setColumnMapping(string $tableName, string $oldName, string $newName)
+    {
+        if (!is_null($this->mapping)) {
+            $this->mapping->setColumnMapping($tableName, $oldName, $newName);
+        }
+    }
+
     public function acceptSchema(Schema $schema)
     {
         $this->sourceSchema = $schema;
@@ -55,6 +77,8 @@ class CopyConverter implements Converter
     public function acceptTable(Table $table)
     {
         $this->currentTable = $this->targetSchema->createTable($table->getName());
+        $this->setTableMapping($table->getName(), $table->getName());
+
     }
 
     public function acceptColumn(Table $table, Column $column)
@@ -62,6 +86,7 @@ class CopyConverter implements Converter
         $options = $column->toArray();
         unset($options['name']);
         $this->currentTable->addColumn($column->getName(), $options['type']->getName(), $options);
+        $this->setColumnMapping($table->getName(), $column->getName(), $column->getName());
     }
 
     public function acceptForeignKey(Table $localTable, ForeignKeyConstraint $fkConstraint)
@@ -90,4 +115,6 @@ class CopyConverter implements Converter
     public function acceptSequence(Sequence $sequence)
     {
     }
+
+
 }

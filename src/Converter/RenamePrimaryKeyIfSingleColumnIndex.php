@@ -26,7 +26,12 @@ class RenamePrimaryKeyIfSingleColumnIndex extends CopyConverter
             $this->currentTable->dropColumn($column->getName());
             $this->currentTable->addColumn('id', $options['type']->getName(), $options);
             $this->currentTable->setPrimaryKey(['id']);
-        }
 
+            $oldTableName = $table->getName();
+            $oldColumnName = $column->getName();
+            $newColumnName = 'id';
+
+            $this->setColumnMapping($oldTableName, $oldColumnName, $newColumnName);
+        }
     }
 }
