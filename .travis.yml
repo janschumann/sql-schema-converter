@@ -5,6 +5,7 @@ language: php
 php:
   - '7.1'
   - '7.2'
+
 install:
   - composer install
 
@@ -12,11 +13,15 @@ addons:
   sonarcloud:
     organization: "janschumann-github"
     token:
-      secure: "cgWcr9NjUOIgYkxtYcpj1xHq3nxWSk30zRBP0ZTSaiaTKgzz6LeJdCcIByX2B/CeJXuXWjKRZYdf1GhNrccR7bZeNZo48tZlByLwN+w+tfxPqxowP/Ajlwfgi1iVBzjURhvw03AgJm/OWCgHbCofH4R/G/TNYDPSCZtVg8efthy2nzs6PyxPiQkqx6Xq17UxdIndGBFDVbSRQMXT10SC10m2dWqVUvnWpz5aMB+PTYbUfAjBmw/g2lWNh3ZuonYzUeIookSAVO0LRVJzV5R9kaObV0myv3vZ/2Tg9uKWO4S5ZZ4ekXMlrcczpg6hhSFBOXhgaqd4NqFdns5OuFAf3uufCq5SvJXm8bNxmJSqJx3sQBiq7kCn2aQqy3Rv5gwb2B8igqK5c4jNAMShb6y4P1PojuYYabAaSnW1RoAygwRGQ+mS0V+f1ALmj8uZniCYbtzrQUgYQNEgQCDzyhXrEmKdk/S6l5JCUHfEYJVhDCTkuqykockddXdDHmUF5q0Oy7cfTCEvpWgSJV1YASz0MNttzkBxKVpXHRaPg9c/6FI1v73NVWIwZvHLYMFxVw37qxKqz1QcXeilsmMZ9iOvDpT6n7qu8628C8FnIP5WnB8C2r11sbTbI9q9H3Not4uq1vq/qV7UShsLPL8yS8HEUwBngTt5+n+B2MFBj1VlEe8="
+      secure: "uBuNSzga5cZhK+FjzOnYHNjgekfQ4D+5J6tg07WpDS1/UKiVr7fepm12xYQacfX6jRdRKzleEz1RbpMT+p+Ti0mkkaKYkGgEJau90+c8reHXuIS4KolFBRb3X319LxeQmkmXHOammTFgnFDAuA0xzRe5xZ9jJUtkmVuZBy/gIVOUw7q8mZKHIJ0zydMOG7xfm4Dyat8AECfIajYhAa4M69AXApmezuCgzu4Oj8rz9j0Qof2HuGJgBaDGfcUh3T9Hc7IT8d9Fln1Lry179YeU/dpgiNofp/Y740ZWQ2osmFx88MjRgurjTaEpnLG5ssUyUHfABktFpv70VdJsSkzl64MpqswodTqRND8azswwT41+1sfrxXI1x6xho1Zux8ol3UiIax5fNZTtJcLW/F2DkLmUmiuU8Libf9Ws4sphRmp7AIsxR4aWF8GHtHfzcs468qOR79fI/ZphQIQHMkcPpKTUdpkgrCFRzF7WEcCyunxXGIqlvlEjpWSftM8hnSED/3KJArWnX2Om+yDAYp3Oom5Lep961mnbZQBnkxHC+jKJ0v4oGS3tET5fu9YpBZg4Y39DnJu8PTkpidAMaaKN1pHI+JZXlSJEFSw7ShyizV37mV6nudVo75m9EFyxU/DdMjWAqdboZyzpVkFNSvfrYUFyONdTQoXOGnsg7ChK6S8="
+
 jdk:
   - oraclejdk8
+
 script:
+  - vendor/bin/phpunit
   - sonar-scanner
+
 cache:
   directories:
     - '$HOME/.sonar/cache'
