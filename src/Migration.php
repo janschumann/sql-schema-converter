@@ -6,6 +6,7 @@ use Doctrine\DBAL\ConnectionException;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
 use SchumannIt\DBAL\Schema\Converter\ConverterChain;
 use SchumannIt\DBAL\Schema\Converter\DoctrineConverter;
 
@@ -99,8 +100,8 @@ class Migration
     /**
      * Migrate data to the target db, assuming the target db is empty
      *
+     * @param array $tables
      * @throws DBALException
-     * @throws \Doctrine\DBAL\Schema\SchemaException
      */
     public function migrateData(array $tables = [])
     {
@@ -113,28 +114,50 @@ class Migration
             if (count($tables) > 0 && !array_key_exists($table->getName(), array_flip($tables))) {
                 continue;
             }
+            $this->processTable($targetSchema, $table);
+        }
+    }
 
-            $tableName = $table->getName();
-            $newTableName = $this->mapping->getTableName($tableName);
-            $newTable = $targetSchema->getTable($newTableName);
+    /**
+     * @param Schema $targetSchema
+     * @param Table $table
+     * @throws DBALException
+     */
+    private function processTable(Schema $targetSchema, Table $table)
+    {
+        $targetSchema = $this->targetConnection->getSchemaManager()->createSchema();
+        $tableName = $table->getName();
+        $stmt = $this->sourceConnection->query("SELECT * FROM ${tableName}");
+        $rows = $stmt->fetchAll();
 
-            $stmt = $this->sourceConnection->query("SELECT * FROM ${tableName}");
-            $rows = $stmt->fetchAll();
-            foreach ($rows as $row) {
-                $binds = [];
-                $data = [];
-                foreach ($row as $col => $value) {
-                    $colName = $this->mapping->getColumnName($tableName, $col);
-                    $binds[] = ':'.$colName;
-                    $data[$colName] = $value;
-                }
-                $insert = 'INSERT INTO ' . $newTableName .' (' . implode(',', array_keys($data)) . ') VALUES (' . implode(',', $binds) . ')';
-                $insertStmt = $this->targetConnection->prepare($insert);
-                foreach ($data as $col => $value) {
-                    $insertStmt->bindValue($col, $value, $newTable->getColumn($col)->getType()->getBindingType());
-                }
-                $insertStmt->execute();
+        $this->processRows($targetSchema, $tableName, $rows);
+    }
+
+    /**
+     * @param Schema $targetSchema
+     * @param string $tableName
+     * @param array $rows
+     * @throws DBALException
+     * @throws \Doctrine\DBAL\Schema\SchemaException
+     */
+    private function processRows(Schema $targetSchema, string $tableName, array $rows)
+    {
+        $newTableName = $this->mapping->getTableName($tableName);
+        $newTable = $targetSchema->getTable($newTableName);
+        foreach ($rows as $row) {
+            $binds = [];
+            $data = [];
+            foreach ($row as $col => $value) {
+                $colName = $this->mapping->getColumnName($tableName, $col);
+                $binds[] = ':'.$colName;
+                $data[$colName] = $value;
             }
+            $insert = 'INSERT INTO ' . $newTableName .' (' . implode(',', array_keys($data)) . ') VALUES (' . implode(',', $binds) . ')';
+            $insertStmt = $this->targetConnection->prepare($insert);
+            foreach ($data as $col => $value) {
+                $insertStmt->bindValue($col, $value, $newTable->getColumn($col)->getType()->getBindingType());
+            }
+            $insertStmt->execute();
         }
     }
 
@@ -155,28 +178,6 @@ class Migration
         $comparator = new Comparator();
         $diff = $comparator->compare($this->targetConnection->getSchemaManager()->createSchema(), $this->targetSchema);
         $this->changes = $diff->toSql($this->targetPlatform);
-    }
-
-    public function generateMigDataCommands()
-    {
-        $count = 0;
-        $commandCount = 1;
-        $tables = [];
-        $commands = [];
-        foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
-            if ($count == 2) {
-                $commands[] = 'if ($argv[1] == ' . $commandCount . ') $mig->migrateData(["' . implode('","', $tables) . '"])';
-                $commandCount++;
-                $count = 0;
-                $tables = [];
-            }
-            $count++;
-            $tables[] = $table->getName();
-        }
-        $commands[] = 'if ($argv[1] == ' . $commandCount . ') $mig->migrateData(["' . implode('","', $tables) . '"])';
-        foreach ($commands as $command) {
-            echo $command . ";\n";
-        }
     }
 
     public function getMigratedRows()

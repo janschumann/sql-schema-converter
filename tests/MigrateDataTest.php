@@ -39,14 +39,7 @@ class MigrateDataTest extends TestCase
         $sourceConnection->method('getSchemaManager')->willReturn($schemaManager);
         $stmt = $this->createMock(Statement::class);
         $this->count = 0;
-        $stmt->method('fetch')->will($this->returnCallback(function() {
-            static $count = 1;
-            if ($count > 1) {
-                return false;
-            }
-            $count++;
-            return ['indexColumn' => 1];
-        }));
+        $stmt->method('fetchAll')->willReturn([['indexColumn' => 1]]);
         $sourceConnection->method('query')->willReturn($stmt);
 
         $targetConnection = $this->createMock(Connection::class);
