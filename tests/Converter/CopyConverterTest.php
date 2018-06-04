@@ -82,4 +82,22 @@ class CopyConverterTest extends TestCase
 
         $this->assertEquals($sourceSchema, $converter->getResult());
     }
+
+    public function testIndexesAreLeftUnchangedUnchanged()
+    {
+        $table = new Table('foo', [
+            new Column('fooID', Type::getType('integer')),
+            new Column('barID', Type::getType('integer')),
+        ]);
+        $table->setPrimaryKey(['fooID', 'barID']);
+        $sourceSchema = new Schema([$table]);
+
+        $converter = new CopyConverter();
+
+        $sourceSchema->visit($converter);
+
+        $indexes = $converter->getResult()->getTable('foo')->getIndexes();
+        $this->assertEquals(1, count($indexes));
+    }
+
 }

@@ -10,6 +10,7 @@ namespace SchumannIt\DBAL\Schema\Converter;
 
 use Doctrine\DBAL\Schema\Schema;
 use SchumannIt\DBAL\Schema\Converter;
+use SchumannIt\DBAL\Schema\Mapping;
 
 class ConverterChain implements \Iterator
 {
@@ -25,6 +26,26 @@ class ConverterChain implements \Iterator
      * @var Converter
      */
     private $current;
+    /**
+     * @var Mapping
+     */
+    private $mapping;
+
+    /**
+     * @param Mapping $mapping
+     */
+    public function __construct(Mapping $mapping)
+    {
+        $this->mapping = $mapping;
+    }
+
+    /**
+     * @return Mapping
+     */
+    public function getMapping()
+    {
+        return $this->mapping;
+    }
 
     /**
      * @param Converter
@@ -39,6 +60,7 @@ class ConverterChain implements \Iterator
      */
     public function current()
     {
+        $this->current->setSchemaMapping($this->mapping);
         return $this->current;
     }
 
@@ -52,6 +74,8 @@ class ConverterChain implements \Iterator
 
     public function next()
     {
+        $this->mapping->resolve();
+
         $this->pos++;
         if (array_key_exists($this->pos, $this->converter)) {
             $this->current = $this->converter[$this->pos];
@@ -81,6 +105,7 @@ class ConverterChain implements \Iterator
 
     public function rewind()
     {
+        $this->mapping->reset();
         $this->pos = -1;
         $this->next();
     }

@@ -1,6 +1,27 @@
+dist: trusty
+sudo: required
+
 language: php
 php:
   - '7.1'
   - '7.2'
+
 install:
   - composer install
+
+addons:
+  sonarcloud:
+    organization: "janschumann-github"
+    token:
+      secure: "uBuNSzga5cZhK+FjzOnYHNjgekfQ4D+5J6tg07WpDS1/UKiVr7fepm12xYQacfX6jRdRKzleEz1RbpMT+p+Ti0mkkaKYkGgEJau90+c8reHXuIS4KolFBRb3X319LxeQmkmXHOammTFgnFDAuA0xzRe5xZ9jJUtkmVuZBy/gIVOUw7q8mZKHIJ0zydMOG7xfm4Dyat8AECfIajYhAa4M69AXApmezuCgzu4Oj8rz9j0Qof2HuGJgBaDGfcUh3T9Hc7IT8d9Fln1Lry179YeU/dpgiNofp/Y740ZWQ2osmFx88MjRgurjTaEpnLG5ssUyUHfABktFpv70VdJsSkzl64MpqswodTqRND8azswwT41+1sfrxXI1x6xho1Zux8ol3UiIax5fNZTtJcLW/F2DkLmUmiuU8Libf9Ws4sphRmp7AIsxR4aWF8GHtHfzcs468qOR79fI/ZphQIQHMkcPpKTUdpkgrCFRzF7WEcCyunxXGIqlvlEjpWSftM8hnSED/3KJArWnX2Om+yDAYp3Oom5Lep961mnbZQBnkxHC+jKJ0v4oGS3tET5fu9YpBZg4Y39DnJu8PTkpidAMaaKN1pHI+JZXlSJEFSw7ShyizV37mV6nudVo75m9EFyxU/DdMjWAqdboZyzpVkFNSvfrYUFyONdTQoXOGnsg7ChK6S8="
+
+jdk:
+  - oraclejdk8
+
+script:
+  - vendor/bin/phpunit --coverage-xml build/phpunit.coverage.xml --log-junit build/phpunit.xml
+  - sonar-scanner
+
+cache:
+  directories:
+    - '$HOME/.sonar/cache'

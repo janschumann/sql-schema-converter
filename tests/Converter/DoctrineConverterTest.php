@@ -59,7 +59,7 @@ class DoctrineConverterTest extends TestCase
         $this->assertArrayHasKey('already_underscored', $columns);
     }
 
-    public function testIndexColumnNamesAreChanged()
+    public function testPrimaryKeyColumnNamesAreChanged()
     {
         $table = new Table('foo', [
             new Column('fooID', Type::getType('integer')),
@@ -79,4 +79,51 @@ class DoctrineConverterTest extends TestCase
         $columns = $table->getPrimaryKey()->getColumns();
         $this->assertArrayHasKey('foo_id', array_flip($columns));
     }
+
+    public function testUniqueIndexColumnNamesAreChanged()
+    {
+        $table = new Table('foo', [
+            new Column('fooID', Type::getType('integer')),
+            new Column('barID', Type::getType('integer')),
+        ]);
+        $table->addUniqueIndex(['fooID', 'barID']);
+        $sourceSchema = new Schema([$table]);
+
+        $converter = new DoctrineConverter();
+
+        $sourceSchema->visit($converter);
+
+        $table = $converter->getResult()->getTable('foo');
+
+        $indexes = $table->getIndexes();
+        foreach ($indexes as $index) {
+            $columns = $index->getColumns();
+            $this->assertArrayHasKey('foo_id', array_flip($columns));
+            $this->assertArrayHasKey('bar_id', array_flip($columns));
+        }
+    }
+
+    public function testIndexColumnNamesAreChanged()
+    {
+        $table = new Table('foo', [
+            new Column('fooID', Type::getType('integer')),
+            new Column('barID', Type::getType('integer')),
+        ]);
+        $table->addIndex(['fooID', 'barID']);
+        $sourceSchema = new Schema([$table]);
+
+        $converter = new DoctrineConverter();
+
+        $sourceSchema->visit($converter);
+
+        $table = $converter->getResult()->getTable('foo');
+
+        $indexes = $table->getIndexes();
+        foreach ($indexes as $index) {
+            $columns = $index->getColumns();
+            $this->assertArrayHasKey('foo_id', array_flip($columns));
+            $this->assertArrayHasKey('bar_id', array_flip($columns));
+        }
+    }
+
 }
