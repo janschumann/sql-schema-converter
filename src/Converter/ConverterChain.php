@@ -12,7 +12,7 @@ use Doctrine\DBAL\Schema\Schema;
 use SchumannIt\DBAL\Schema\Converter;
 use SchumannIt\DBAL\Schema\Mapping;
 
-class ConverterChain implements \Iterator
+class ConverterChain implements \Iterator, \Countable
 {
     /**
      * @var Converter[]

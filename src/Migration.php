@@ -69,16 +69,11 @@ class Migration
     /**
      * Fetches the sql commands needed to sync target schema
      *
-     * @return string
+     * @return array
      */
     public function getChangesSql()
     {
-        $sql = "";
-        foreach ($this->changes as $line) {
-            $sql .= $line . ";\n";
-        }
-
-        return $sql;
+        return $this->changes;
     }
 
     /**
@@ -100,24 +95,73 @@ class Migration
     /**
      * Migrate data to the target db, assuming the target db is empty
      *
-     * @param array $tables
+     * @param array $tables The tables to sync
+     * @param bool $force Sync even if no data seems to be changed
      * @throws DBALException
      */
-    public function migrateData(array $tables = [])
+    public function migrateData(array $tables = [], $force = false)
     {
         if ($this->hasChanges()) {
             throw new \LogicException("Please apply changes before migrating data.");
+        }
+
+        $chagedData = [];
+        if (!$force) {
+            $chagedData = $this->compareRecordCount();
+        }
+
+        if (!$force && 0 === count($chagedData)) {
+            // nothing to do
+            return;
         }
 
         // create the target schema from db
         $this->targetSchema = $this->targetConnection->getSchemaManager()->createSchema();
 
         foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
+            // ensure only given tables are processed, all tables by default
             if (count($tables) > 0 && !array_key_exists($table->getName(), array_flip($tables))) {
                 continue;
             }
+            // change data is only filled if force != true
+            if (!$force && !array_key_exists($table->getName(), $chagedData)) {
+                continue;
+            }
+
             $this->processTable($table);
         }
+    }
+
+    /**
+     * @param bool $all return diff for all tables instead of only changed
+     * @return array
+     * @throws DBALException
+     */
+    public function compareRecordCount(bool $all = false)
+    {
+        $out = [];
+
+        foreach ($this->sourceConnection->getSchemaManager()->createSchema()->getTables() as $table) {
+            $originalTableName = $table->getName();
+            $stmt = $this->sourceConnection->query("SELECT count(*) FROM ${originalTableName}");
+            $row = $stmt->fetch();
+            $sourceCount = $row['count(*)'];
+
+            $targetTableName = $this->mapping->getTableName($originalTableName);
+            $stmt = $this->targetConnection->query("SELECT count(*) FROM ${targetTableName}");
+            $row = $stmt->fetch();
+            $targetCount = $row['count(*)'];
+
+            if ($all || $sourceCount != $targetCount) {
+                $out[$originalTableName] = [
+                    'originalCount' => $sourceCount,
+                    'targetCount' => $targetCount,
+                    'targetTableName' => $targetTableName
+                ];
+            }
+        }
+
+        return $out;
     }
 
     /**

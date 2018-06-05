@@ -138,7 +138,7 @@ class MigrationTest extends TestCase
         $migration = new Migration($this->sourceConnection, $this->targetConnection, $this->converterChain);
 
         $this->assertTrue($migration->hasChanges());
-        $this->assertEquals("CREATE TABLE foo;\n", $migration->getChangesSql());
+        $this->assertEquals(["CREATE TABLE foo"], $migration->getChangesSql());
     }
 
     public function testApplyChangesWorksOnTraget()

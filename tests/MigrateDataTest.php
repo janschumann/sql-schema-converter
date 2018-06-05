@@ -25,7 +25,7 @@ use SchumannIt\DBAL\Schema\Converter\ConverterChain;
 
 class MigrateDataTest extends TestCase
 {
-    public function test()
+    public function testDefaultMerge()
     {
         $column = new Column('indexColumn', Type::getType('integer'));
         $table = new Table('foo', [$column]);
@@ -40,6 +40,7 @@ class MigrateDataTest extends TestCase
         $stmt = $this->createMock(Statement::class);
         $this->count = 0;
         $stmt->method('fetchAll')->willReturn([['indexColumn' => 1]]);
+        $stmt->method('fetch')->willReturn(['count(*)' => 1]);
         $sourceConnection->method('query')->willReturn($stmt);
 
         $targetConnection = $this->createMock(Connection::class);
@@ -51,6 +52,9 @@ class MigrateDataTest extends TestCase
         $stmt = $this->createMock(Statement::class);
         $stmt->expects($this->once())->method('bindValue')->with('indexColumn', 1, 1);
         $targetConnection->method('prepare')->willReturn($stmt);
+        $stmt = $this->createMock(Statement::class);
+        $stmt->method('fetch')->willReturn(['count(*)' => 0]);
+        $targetConnection->method('query')->willReturn($stmt);
 
         $mapping = new Mapping();
         $chain = new ConverterChain($mapping);
@@ -58,5 +62,93 @@ class MigrateDataTest extends TestCase
         $mig = new Migration($sourceConnection, $targetConnection, $chain);
 
         $mig->migrateData();
+    }
+
+    public function testForceMergesAlsoTablesWithEqualRecordCount()
+    {
+        $column = new Column('indexColumn', Type::getType('integer'));
+        $table = new Table('foo', [$column]);
+        $table->addIndex(['indexColumn']);
+
+        $sourceConnection = $this->createMock(Connection::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager->method('createSchema')->willReturn(new Schema([$table]));
+        $platform = $this->createMock(AbstractPlatform::class);
+        $schemaManager->method('getDatabasePlatform')->willReturn($platform);
+        $sourceConnection->method('getSchemaManager')->willReturn($schemaManager);
+        $stmt = $this->createMock(Statement::class);
+        $this->count = 0;
+        $stmt->method('fetchAll')->willReturn([['indexColumn' => 1]]);
+        $stmt->method('fetch')->willReturn(['count(*)' => 1]);
+        $sourceConnection->method('query')->willReturn($stmt);
+
+        $targetConnection = $this->createMock(Connection::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager->method('createSchema')->willReturn(new Schema([$table]));
+        $platform = $this->createMock(AbstractPlatform::class);
+        $schemaManager->method('getDatabasePlatform')->willReturn($platform);
+        $targetConnection->method('getSchemaManager')->willReturn($schemaManager);
+        $stmt = $this->createMock(Statement::class);
+        $stmt->expects($this->once())->method('bindValue')->with('indexColumn', 1, 1);
+        $targetConnection->method('prepare')->willReturn($stmt);
+        $stmt = $this->createMock(Statement::class);
+        $stmt->method('fetch')->willReturn(['count(*)' => 1]);
+        $targetConnection->method('query')->willReturn($stmt);
+
+        $mapping = new Mapping();
+        $chain = new ConverterChain($mapping);
+        $chain->add(new CopyConverter());
+        $mig = new Migration($sourceConnection, $targetConnection, $chain);
+
+        $mig->migrateData([], true);
+    }
+
+    public function testSkipsMigrationItTablesAreInSync()
+    {
+        $this->markTestIncomplete("review");
+
+        $column = new Column('indexColumn', Type::getType('integer'));
+        $table = new Table('foo', [$column]);
+        $table->addIndex(['indexColumn']);
+
+        $sourceConnection = $this->createMock(Connection::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager->method('createSchema')->willReturn(new Schema([$table]));
+        $platform = $this->createMock(AbstractPlatform::class);
+        $schemaManager->method('getDatabasePlatform')->willReturn($platform);
+        $sourceConnection->method('getSchemaManager')->willReturn($schemaManager);
+        $stmt = $this->createMock(Statement::class);
+        $this->count = 0;
+        $stmt->method('fetchAll')->willReturn([['indexColumn' => 1]]);
+        $stmt->method('fetch')->willReturn(['count(*)' => 1]);
+        $sourceConnection->method('query')->willReturn($stmt);
+
+        $targetConnection = $this->createMock(Connection::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager->method('createSchema')->willReturn(new Schema([$table]));
+        $platform = $this->createMock(AbstractPlatform::class);
+        $schemaManager->method('getDatabasePlatform')->willReturn($platform);
+        $targetConnection->method('getSchemaManager')->willReturn($schemaManager);
+        $targetConnection->expects($this->never())->method('prepare');
+        $stmt = $this->createMock(Statement::class);
+        $stmt->method('fetch')->willReturn(['count(*)' => 1]);
+        $targetConnection->method('query')->willReturn($stmt);
+
+        $mapping = new Mapping();
+        $chain = new ConverterChain($mapping);
+        $chain->add(new CopyConverter());
+        $mig = new Migration($sourceConnection, $targetConnection, $chain);
+
+        $mig->migrateData();
+    }
+
+    public function testSkipsMigrationIfSchemaHasChanges()
+    {
+        $this->markTestIncomplete("TODO");
+    }
+
+    public function testSkipsTablesThatAreNotInSpecificList()
+    {
+        $this->markTestIncomplete("TODO");
     }
 }
